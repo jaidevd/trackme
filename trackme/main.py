@@ -1,6 +1,7 @@
 import requests
 from getpass import getpass
 import feedparser
+import sys
 
 def get_repos_list(auth):
     s = requests.session()
@@ -27,8 +28,15 @@ def get_user_actor(auth):
         print entry['title']
 
 def main():
-    username = raw_input("Username: ").strip()
-    password = getpass('Password: ')
+    import keyring
+    if "--userpass" in sys.argv:
+        username = raw_input("Username: ").strip()
+        password = getpass('Password: ')
+        keyring.set_password("github",username, password)
+    elif "--user" in sys.argv:
+        username = raw_input("Username: ").strip()
+        password = keyring.get_password("github",username)
+        
     get_user_actor((username, password))
 
 if __name__ == "__main__":
