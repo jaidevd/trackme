@@ -35,6 +35,12 @@ def get_user_actor(auth):
         dt = datetime.datetime.fromtimestamp(time.mktime(published))
         print dt.strftime(fmt) + " -- " + title
 
+def get_user_events(auth):
+    s = requests.session()
+    url = "https://api.github.com/users/{}/events".format(auth[0])
+    r = s.get(url,auth=auth)
+    print len(r.json)
+
 def main():
     import keyring
     if "--userpass" in sys.argv:
