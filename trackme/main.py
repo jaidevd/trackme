@@ -2,6 +2,10 @@ import requests
 from getpass import getpass
 import feedparser
 import sys
+import datetime
+import time
+
+fmt = "%A %d. %B"
 
 def get_repos_list(auth):
     s = requests.session()
@@ -24,8 +28,12 @@ def get_user_actor(auth):
     r = s.get(actor_url, auth=auth)
     user_feed = r.text.encode(r.encoding)
     feed = feedparser.parse(user_feed)
-    for entry in feed.get('entries'):
-        print entry['title']
+    entries = feed.get('entries')[::-1]
+    for entry in entries:
+        title = entry['title']
+        published = entry['published_parsed']
+        dt = datetime.datetime.fromtimestamp(time.mktime(published))
+        print dt.strftime(fmt) + " -- " + title
 
 def main():
     import keyring
