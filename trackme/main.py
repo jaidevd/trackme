@@ -27,7 +27,7 @@ def get_repos_list(auth):
 
 
 def get_issues_data(org, auth):
-    print "="*25 + " Issues feed " + "="*25
+    data = ["="*25 + " Issues feed " + "="*25]
     s = requests.session()
     url = ISSUES_QUERY.format(org=org)
     r = s.get(url, auth=auth)
@@ -37,7 +37,7 @@ def get_issues_data(org, auth):
         if issue['user']['login'] == auth[0]:
             created = issue['created_at']
             dt = dateutil.parser.parse(created)
-            print dt.strftime(fmt) + " -- Issue created: " + title
+            data.append(dt.strftime(fmt) + " -- Issue created: " + title)
         else:
             comments = s.get(issue['comments_url'], auth=auth)
             comments = comments.json()
@@ -47,11 +47,12 @@ def get_issues_data(org, auth):
                     dt = dateutil.parser.parse(created)
                     msg = dt.strftime(fmt) + " -- commented on issue: " + \
                           title
-                    print msg
+                    data.append(msg)
+    return data
 
 
 def get_user_actor(auth):
-    print "="*25 + " Private events " + "="*25
+    data = ["="*25 + " Private events " + "="*25]
     s = requests.session()
     url = "https://api.github.com/feeds"
     r = s.get(url, auth=auth)
@@ -64,7 +65,8 @@ def get_user_actor(auth):
         title = entry['title']
         published = entry['published_parsed']
         dt = datetime.datetime.fromtimestamp(time.mktime(published))
-        print dt.strftime(fmt) + " -- " + title
+        data.append(dt.strftime(fmt) + " -- " + title)
+    return data
 
 
 def get_user_events(auth):
@@ -81,14 +83,28 @@ def main():
         password = getpass('Password: ')
         keyring.set_password("github",username, password)
     elif "--user" in sys.argv:
-        if len(sys.argv) == 3:
-            username = sys.argv[2]
-        else:
+        ind = sys.argv.index("--user")
+        try:
+            username = sys.argv[ind+1]
+        except IndexError:
             username = raw_input("Username: ").strip()
         password = keyring.get_password("github",username)
         
-    get_user_actor((username, password))
-    get_issues_data("enthought",(username, password))
+    data1 = get_user_actor((username, password))
+    data2 = get_issues_data("enthought",(username, password))
+    data1.extend(data2)
+
+    if "-o" in sys.argv:
+        ind = sys.argv.index("-o")
+        outfile = sys.argv[ind+1]
+        s = "\n".join(data1)
+        s = s.encode("utf8")
+        with open(outfile, "w") as f:
+            f.write(s)
+    else:
+        for line in data1:
+            print line
+
 
 if __name__ == "__main__":
     main()
